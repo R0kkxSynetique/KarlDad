@@ -10,7 +10,7 @@ public class PlayerMovement : MonoBehaviour {
     public Transform orientation;
     
     //Other
-    private Rigidbody rb;
+    public static Rigidbody rb;
 
     //Rotation and look
     private float xRotation;
@@ -43,7 +43,7 @@ public class PlayerMovement : MonoBehaviour {
     public bool jumping, sprinting, crouching;
     
     //Sliding
-    private Vector3 normalVector = Vector3.up;
+    public Vector3 normalVector = Vector3.up;
     private Vector3 wallNormalVector;
 
     void Awake() {
