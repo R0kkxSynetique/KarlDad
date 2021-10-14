@@ -1,77 +1,8 @@
 using System;
 using UnityEngine;
 
-public class WallRunTutorial : MonoBehaviour
+public class Movements : MonoBehaviour
 {
-    /// <summary>
-    /// Wall run Tutorial stuff, scroll down for full movement
-    /// </summary>
-
-    //Wallrunning
-    public LayerMask whatIsWall;
-    public float wallrunForce,maxWallrunTime, maxWallSpeed;
-    bool isWallRight, isWallLeft, isWallAtRange;
-    bool isWallRunning;
-    public float maxWallRunCameraTilt, wallRunCameraTilt;
-
-    private void WallRunInput() //make sure to call in void Update
-    {
-        //Wallrun
-        // if (Input.GetKey(KeyCode.D) && isWallRight) StartWallrun();
-        // if (Input.GetKey(KeyCode.A) && isWallLeft) StartWallrun();
-        if (!grounded && isWallAtRange) StartWallrun();
-        
-    }
-    private void StartWallrun()
-    {
-        rb.useGravity = false;
-        isWallRunning = true;
-        allowDashForceCounter = false;
-
-        if (rb.velocity.magnitude <= maxWallSpeed)
-        {
-            rb.AddForce(orientation.forward * wallrunForce * Time.deltaTime);
-
-            //Make sure char sticks to wall
-            if (isWallRight)
-            {
-                rb.AddForce(orientation.right * wallrunForce * Time.deltaTime);
-            }
-            else
-            {
-                rb.AddForce(-orientation.right * wallrunForce * Time.deltaTime);
-            }
-
-        }
-    }
-    private void StopWallRun()
-    {
-        isWallRunning = false;
-        rb.useGravity = true;
-    }
-    private void CheckForWall() //make sure to call in void Update
-    {
-        isWallRight = Physics.Raycast(transform.position, WallCheckR.right, 1f, whatIsWall);
-        isWallLeft = Physics.Raycast(transform.position, -WallCheckL.right, 1f, whatIsWall);
-
-        if (Physics.Raycast(transform.position, WallCheckR.right, 1f, whatIsWall) || Physics.Raycast(transform.position, -WallCheckL.right, 1f, whatIsWall)) {
-            isWallAtRange = true;
-        }else{
-            isWallAtRange = false;
-        }
-
-        //leave wall run
-        if (!isWallAtRange) StopWallRun();
-        //reset double jump (if you have one :D)
-        if (isWallAtRange) doubleJumpsLeft = startDoubleJumps;
-    }
-
-
-    /// <summary>
-    /// Wall run done, here comes the rest of the movement script
-    /// </summary>
-
-
     //Assingables
     public Transform playerCam;
     public Transform orientation;
@@ -111,6 +42,13 @@ public class WallRunTutorial : MonoBehaviour
 
     public int startDoubleJumps = 1;
     int doubleJumpsLeft;
+
+    //WallRun
+    public LayerMask whatIsWall;
+    public float wallrunForce,maxWallrunTime, maxWallSpeed;
+    bool isWallRight, isWallLeft, isWallAtRange;
+    bool isWallRunning;
+    public float maxWallRunCameraTilt, wallRunCameraTilt;
 
     //Input
     public float x, y;
@@ -180,9 +118,48 @@ public class WallRunTutorial : MonoBehaviour
         WallRunInput();
     }
 
-    /// <summary>
-    /// Find user input. Should put this in its own class but im lazy
-    /// </summary>
+    private void WallRunInput() //make sure to call in void Update
+    {
+        if (!grounded && isWallAtRange){
+            StartWallrun();
+        }
+    }
+
+    private void StartWallrun()
+    {
+        isWallRunning = true;
+
+        rb.useGravity = false;
+
+        if (rb.velocity.y > 0){ rb.AddForce(-orientation.up * 40f); }
+        if (rb.velocity.y < 0){ rb.AddForce(orientation.up * 40f); }
+        
+        
+
+        rb.AddForce(orientation.forward * wallrunForce * Time.deltaTime);
+
+        if (isWallLeft){rb.AddForce(-WallCheckL.right * wallrunForce * Time.deltaTime);}
+        if (isWallRight){rb.AddForce(WallCheckL.right * wallrunForce * Time.deltaTime);}
+
+    }
+    private void StopWallRun()
+    {
+        isWallRunning = false;
+        rb.useGravity = true;
+    }
+
+    private void CheckForWall() //make sure to call in void Update
+    {
+        isWallRight = Physics.Raycast(orientation.position, orientation.right, 1f, whatIsWall);
+        isWallLeft = Physics.Raycast(orientation.position, -orientation.right, 1f, whatIsWall);
+        
+        isWallAtRange = false;
+
+        if (isWallRight || isWallLeft){ isWallAtRange = true; }
+
+        if (!isWallAtRange){ StopWallRun(); }
+    }
+
     private void MyInput()
     {
         x = Input.GetAxisRaw("Horizontal");
@@ -224,10 +201,7 @@ public class WallRunTutorial : MonoBehaviour
         if (Input.GetKey(KeyCode.LeftControl) && readyToRocket)
             StartRocketBoost();
 
-        //Climbing
-        if (Physics.Raycast(transform.position, orientation.forward, 1, whatIsLadder) && y > .9f)
-            Climb();
-        else alreadyStoppedAtLadder = false;
+        //climbing
     }
 
     private void ResetTapTimes()
@@ -302,7 +276,7 @@ public class WallRunTutorial : MonoBehaviour
         float multiplier = 1f, multiplierV = 1f;
 
         // Movement in air
-        if (!grounded)
+        if (!grounded && !isWallRunning)
         {
             multiplier = 0.5f;
             multiplierV = 0.5f;
@@ -564,9 +538,9 @@ public class WallRunTutorial : MonoBehaviour
         //While Wallrunning
         //Tilts camera in .5 second
         if (Math.Abs(wallRunCameraTilt) < maxWallRunCameraTilt && isWallRunning && isWallRight)
-            wallRunCameraTilt += Time.deltaTime * maxWallRunCameraTilt * 2;
+            wallRunCameraTilt += Time.deltaTime * maxWallRunCameraTilt;
         if (Math.Abs(wallRunCameraTilt) < maxWallRunCameraTilt && isWallRunning && isWallLeft)
-            wallRunCameraTilt -= Time.deltaTime * maxWallRunCameraTilt * 2;
+            wallRunCameraTilt -= Time.deltaTime * maxWallRunCameraTilt;
 
         //Tilts camera back again
         if (wallRunCameraTilt > 0 && !isWallRight && !isWallLeft)

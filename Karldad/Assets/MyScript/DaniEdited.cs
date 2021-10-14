@@ -1,82 +1,11 @@
-using System;
+﻿using System;
 using UnityEngine;
 
-public class WallRunTutorial : MonoBehaviour
+public class DaniEdited : MonoBehaviour
 {
-    /// <summary>
-    /// Wall run Tutorial stuff, scroll down for full movement
-    /// </summary>
-
-    //Wallrunning
-    public LayerMask whatIsWall;
-    public float wallrunForce,maxWallrunTime, maxWallSpeed;
-    bool isWallRight, isWallLeft, isWallAtRange;
-    bool isWallRunning;
-    public float maxWallRunCameraTilt, wallRunCameraTilt;
-
-    private void WallRunInput() //make sure to call in void Update
-    {
-        //Wallrun
-        // if (Input.GetKey(KeyCode.D) && isWallRight) StartWallrun();
-        // if (Input.GetKey(KeyCode.A) && isWallLeft) StartWallrun();
-        if (!grounded && isWallAtRange) StartWallrun();
-        
-    }
-    private void StartWallrun()
-    {
-        rb.useGravity = false;
-        isWallRunning = true;
-        allowDashForceCounter = false;
-
-        if (rb.velocity.magnitude <= maxWallSpeed)
-        {
-            rb.AddForce(orientation.forward * wallrunForce * Time.deltaTime);
-
-            //Make sure char sticks to wall
-            if (isWallRight)
-            {
-                rb.AddForce(orientation.right * wallrunForce * Time.deltaTime);
-            }
-            else
-            {
-                rb.AddForce(-orientation.right * wallrunForce * Time.deltaTime);
-            }
-
-        }
-    }
-    private void StopWallRun()
-    {
-        isWallRunning = false;
-        rb.useGravity = true;
-    }
-    private void CheckForWall() //make sure to call in void Update
-    {
-        isWallRight = Physics.Raycast(transform.position, WallCheckR.right, 1f, whatIsWall);
-        isWallLeft = Physics.Raycast(transform.position, -WallCheckL.right, 1f, whatIsWall);
-
-        if (Physics.Raycast(transform.position, WallCheckR.right, 1f, whatIsWall) || Physics.Raycast(transform.position, -WallCheckL.right, 1f, whatIsWall)) {
-            isWallAtRange = true;
-        }else{
-            isWallAtRange = false;
-        }
-
-        //leave wall run
-        if (!isWallAtRange) StopWallRun();
-        //reset double jump (if you have one :D)
-        if (isWallAtRange) doubleJumpsLeft = startDoubleJumps;
-    }
-
-
-    /// <summary>
-    /// Wall run done, here comes the rest of the movement script
-    /// </summary>
-
-
     //Assingables
     public Transform playerCam;
     public Transform orientation;
-    public Transform WallCheckL;
-    public Transform WallCheckR;
 
     //Other
     private Rigidbody rb;
@@ -134,6 +63,7 @@ public class WallRunTutorial : MonoBehaviour
 
     //Sliding
     private Vector3 normalVector = Vector3.up;
+    private Vector3 wallNormalVector;
 
     //SonicSpeed
     public float maxSonicSpeed;
@@ -142,10 +72,22 @@ public class WallRunTutorial : MonoBehaviour
     float timePassedSonic;
 
     //flash
-    public float flashCooldown, flashRange;
+    public float flashCooldown,flashRange;
     public int maxFlashesLeft;
     bool alreadySubtractedFlash;
     public int flashesLeft = 3;
+
+    //Wallrunning
+    public LayerMask whatIsWall;
+    RaycastHit wallHitR, wallHitL;
+    public bool isWallRight, isWallLeft;
+    public float maxWallrunTime;
+    public float wallrunForce;
+    public float maxWallSpeed;
+    bool readyToWallrunR, readyToWallrunL;
+    public bool isWallRunning;
+    public float maxWallRunCameraTilt;
+    public float wallRunCameraTilt = 0;
 
     //Climbing
     public float climbForce, maxClimbSpeed;
@@ -177,7 +119,6 @@ public class WallRunTutorial : MonoBehaviour
         Look();
         CheckForWall();
         SonicSpeed();
-        WallRunInput();
     }
 
     /// <summary>
@@ -204,8 +145,7 @@ public class WallRunTutorial : MonoBehaviour
         }
 
         //Dashing
-        if (Input.GetKeyDown(KeyCode.W) && wTapTimes <= 1)
-        {
+        if (Input.GetKeyDown(KeyCode.W) && wTapTimes<=1){
             wTapTimes++;
             Invoke("ResetTapTimes", 0.3f);
         }
@@ -216,13 +156,16 @@ public class WallRunTutorial : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Mouse1) && flashesLeft > 0 && x < 0) SideFlash(false);
 
         //RocketFlight
-        if (Input.GetKeyDown(KeyCode.LeftControl) && readyToRocket)
-        {
+        if (Input.GetKeyDown(KeyCode.LeftControl) && readyToRocket){
             //Dampens velocity
             rb.velocity = rb.velocity / 3;
         }
         if (Input.GetKey(KeyCode.LeftControl) && readyToRocket)
             StartRocketBoost();
+
+        //Wallrun
+        if (Input.GetKey(KeyCode.D) && isWallRight) StartWallrun();
+        if (Input.GetKey(KeyCode.A) && isWallLeft) StartWallrun();
 
         //Climbing
         if (Physics.Raycast(transform.position, orientation.forward, 1, whatIsLadder) && y > .9f)
@@ -275,8 +218,7 @@ public class WallRunTutorial : MonoBehaviour
         if (readyToJump && jumping && grounded && !rocketActive) Jump();
 
         //ResetStuff when touching ground
-        if (grounded)
-        {
+        if (grounded){
             readyToDash = true;
             readyToRocket = true;
             doubleJumpsLeft = startDoubleJumps;
@@ -318,8 +260,7 @@ public class WallRunTutorial : MonoBehaviour
 
     private void Jump()
     {
-        if (grounded)
-        {
+        if (grounded) { 
             readyToJump = false;
 
             //Add jump forces
@@ -335,8 +276,7 @@ public class WallRunTutorial : MonoBehaviour
 
             Invoke(nameof(ResetJump), jumpCooldown);
         }
-        if (!grounded)
-        {
+        if (!grounded){
             readyToJump = false;
 
             //Add jump forces
@@ -354,8 +294,7 @@ public class WallRunTutorial : MonoBehaviour
         }
 
         //Walljump
-        if (isWallRunning)
-        {
+        if (isWallRunning){
             readyToJump = false;
 
             //normal jump
@@ -366,12 +305,15 @@ public class WallRunTutorial : MonoBehaviour
             }
 
             //sidwards wallhop
-            if (isWallRight || isWallLeft && Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D)) rb.AddForce(-orientation.up * jumpForce * 1f);
+            if (isWallRight||isWallLeft && Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D)) rb.AddForce(-orientation.up * jumpForce * 1f);
             if (isWallRight && Input.GetKey(KeyCode.A)) rb.AddForce(-orientation.right * jumpForce * 3.2f);
             if (isWallLeft && Input.GetKey(KeyCode.D)) rb.AddForce(orientation.right * jumpForce * 3.2f);
 
             //Always add forward force
             rb.AddForce(orientation.forward * jumpForce * 1f);
+
+            //Reset Velocity
+            rb.velocity = Vector3.zero;
 
             //Disable dashForceCounter if doublejumping while dashing
             allowDashForceCounter = false;
@@ -409,28 +351,23 @@ public class WallRunTutorial : MonoBehaviour
         rb.useGravity = true;
 
         //Counter currentForce
-        if (allowDashForceCounter)
-        {
+        if (allowDashForceCounter){
             rb.AddForce(dashStartVector * -dashForce * 0.5f);
         }
     }
     private void SonicSpeed()
     {
         //If running builds up speed
-        if (grounded && y >= 0.99f)
-        {
+        if (grounded && y >= 0.99f){
             timePassedSonic += Time.deltaTime;
         }
-        else
-        {
+        else{
             timePassedSonic = 0;
             maxSpeed = startMaxSpeed;
         }
 
-        if (timePassedSonic >= timeBetweenNextSonicBoost)
-        {
-            if (maxSpeed <= maxSonicSpeed)
-            {
+        if (timePassedSonic >= timeBetweenNextSonicBoost){
+            if (maxSpeed <= maxSonicSpeed){
                 maxSpeed += 5;
                 rb.AddForce(orientation.forward * Time.deltaTime * sonicSpeedForce);
             }
@@ -441,16 +378,14 @@ public class WallRunTutorial : MonoBehaviour
     {
         RaycastHit hit;
         //Flash Right
-        if (Physics.Raycast(orientation.position, orientation.right, out hit, flashRange) && isRight)
-        {
+        if (Physics.Raycast(orientation.position, orientation.right, out hit, flashRange) && isRight){
             transform.position = hit.point;
         }
         else if (!Physics.Raycast(orientation.position, orientation.right, out hit, flashRange) && isRight)
             transform.position = new Vector3(transform.position.x + flashRange, transform.position.y, transform.position.z);
 
         //Flash Left
-        if (Physics.Raycast(orientation.position, -orientation.right, out hit, flashRange) && !isRight)
-        {
+        if (Physics.Raycast(orientation.position, -orientation.right, out hit, flashRange) && !isRight){
             transform.position = hit.point;
         }
         else if (!Physics.Raycast(orientation.position, -orientation.right, out hit, flashRange) && !isRight)
@@ -458,14 +393,12 @@ public class WallRunTutorial : MonoBehaviour
 
         //Dampen falldown
         Vector3 vel = rb.velocity;
-        if (rb.velocity.y < 0.5f && !alreadyStoppedAtLadder)
-        {
+        if (rb.velocity.y < 0.5f && !alreadyStoppedAtLadder){
             rb.velocity = new Vector3(vel.x, 0, vel.z);
         }
 
         flashesLeft--;
-        if (!alreadySubtractedFlash)
-        {
+        if (!alreadySubtractedFlash){
             Invoke("ResetFlash", flashCooldown);
             alreadySubtractedFlash = true;
         }
@@ -476,7 +409,7 @@ public class WallRunTutorial : MonoBehaviour
         Invoke("ResetFlash", flashCooldown);
 
         if (flashesLeft < maxFlashesLeft)
-            flashesLeft++;
+        flashesLeft++;
     }
     private void StartRocketBoost()
     {
@@ -510,25 +443,52 @@ public class WallRunTutorial : MonoBehaviour
         rocketActive = false;
         readyToRocket = false;
 
-        if (rocketTimer >= maxRocketTime - 0.2f)
-        {
+        if (rocketTimer >= maxRocketTime - 0.2f){
             rb.AddForce(orientation.forward * rocketForce * -.2f);
             rb.AddForce(Vector3.up * rocketForce * -.4f);
         }
-        else
-        {
+        else{
             rb.AddForce(orientation.forward * rocketForce * -.2f * rocketTimer);
             rb.AddForce(Vector3.up * rocketForce * -.4f * rocketTimer);
         }
-
+        
         rocketTimer = 0;
+    }
+    private void StartWallrun()
+    {
+        rb.useGravity = false;
+        isWallRunning = true;
+        allowDashForceCounter = false;
+
+        if (rb.velocity.magnitude <= maxWallSpeed)
+        {
+            rb.AddForce(orientation.forward * wallrunForce * Time.deltaTime);
+
+            //Make sure char sticks to wall
+            if (isWallRight)
+            rb.AddForce(orientation.right * wallrunForce / 5 * Time.deltaTime);
+            else
+                rb.AddForce(-orientation.right * wallrunForce / 5* Time.deltaTime);
+        }
+    }
+    private void StopWallRun()
+    {
+        isWallRunning = false;
+        rb.useGravity = true;
+    }
+    private void CheckForWall()
+    {
+       isWallRight = Physics.Raycast(transform.position, orientation.right, out wallHitR, 1f, whatIsWall);
+       isWallLeft = Physics.Raycast(transform.position, -orientation.right, out wallHitL, 1f, whatIsWall);
+
+        if (!isWallLeft && !isWallRight) StopWallRun();
+        if (isWallLeft || isWallRight) doubleJumpsLeft = startDoubleJumps;
     }
     private void Climb()
     {
         //Makes possible to climb even when falling down fast
         Vector3 vel = rb.velocity;
-        if (rb.velocity.y < 0.5f && !alreadyStoppedAtLadder)
-        {
+        if (rb.velocity.y < 0.5f && !alreadyStoppedAtLadder){
             rb.velocity = new Vector3(vel.x, 0, vel.z);
             //Make sure char get's at wall
             alreadyStoppedAtLadder = true;
@@ -537,7 +497,7 @@ public class WallRunTutorial : MonoBehaviour
 
         //Push character up
         if (rb.velocity.magnitude < maxClimbSpeed)
-            rb.AddForce(orientation.up * climbForce * Time.deltaTime);
+        rb.AddForce(orientation.up * climbForce * Time.deltaTime);
 
         //Doesn't Push into the wall
         if (!Input.GetKey(KeyCode.S)) y = 0;
