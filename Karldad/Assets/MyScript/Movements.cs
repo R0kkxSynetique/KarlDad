@@ -90,6 +90,8 @@ public class Movements : MonoBehaviour
     public LayerMask whatIsLadder;
     bool alreadyStoppedAtLadder;
 
+    public float _initialYPos;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -120,7 +122,7 @@ public class Movements : MonoBehaviour
 
     private void WallRunInput() //make sure to call in void Update
     {
-        if (!grounded && isWallAtRange){
+        if (!grounded && isWallAtRange && !isWallRunning){
             StartWallrun();
         }
     }
@@ -130,11 +132,6 @@ public class Movements : MonoBehaviour
         isWallRunning = true;
 
         rb.useGravity = false;
-
-        if (rb.velocity.y > 0){ rb.AddForce(-orientation.up * 40f); }
-        if (rb.velocity.y < 0){ rb.AddForce(orientation.up * 40f); }
-        
-        
 
         rb.AddForce(orientation.forward * wallrunForce * Time.deltaTime);
 
@@ -538,15 +535,15 @@ public class Movements : MonoBehaviour
         //While Wallrunning
         //Tilts camera in .5 second
         if (Math.Abs(wallRunCameraTilt) < maxWallRunCameraTilt && isWallRunning && isWallRight)
-            wallRunCameraTilt += Time.deltaTime * maxWallRunCameraTilt;
+            wallRunCameraTilt += (8 * Time.deltaTime) * maxWallRunCameraTilt;
         if (Math.Abs(wallRunCameraTilt) < maxWallRunCameraTilt && isWallRunning && isWallLeft)
-            wallRunCameraTilt -= Time.deltaTime * maxWallRunCameraTilt;
+            wallRunCameraTilt -= (8 * Time.deltaTime) * maxWallRunCameraTilt;
 
         //Tilts camera back again
         if (wallRunCameraTilt > 0 && !isWallRight && !isWallLeft)
-            wallRunCameraTilt -= Time.deltaTime * maxWallRunCameraTilt * 2;
+            wallRunCameraTilt -= (4 * Time.deltaTime) * maxWallRunCameraTilt;
         if (wallRunCameraTilt < 0 && !isWallRight && !isWallLeft)
-            wallRunCameraTilt += Time.deltaTime * maxWallRunCameraTilt * 2;
+            wallRunCameraTilt += (4 * Time.deltaTime) * maxWallRunCameraTilt;
     }
     private void CounterMovement(float x, float y, Vector2 mag)
     {
