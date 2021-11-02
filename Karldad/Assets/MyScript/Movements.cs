@@ -331,7 +331,7 @@ public class Movements : MonoBehaviour
         if (isWallRunning)
         {
             //WallHop
-            if (isWallLeft && !Input.GetKeyDown(KeyCode.A))
+            if (isWallLeft)
             {
                 _rb.AddForce(Orientation.right * JumpForce * 3.2f);
             }
@@ -535,7 +535,7 @@ public class Movements : MonoBehaviour
         Orientation.transform.localRotation = Quaternion.Euler(0, desiredX, 0);
 
         //While Wallrunning
-        //Tilts camera in .5 second
+        //Tilts camera
         if (Math.Abs(WallRunCameraTilt) < MaxWallRunCameraTilt && isWallRunning && isWallRight)
             WallRunCameraTilt += (8 * Time.deltaTime) * MaxWallRunCameraTilt;
         if (Math.Abs(WallRunCameraTilt) < MaxWallRunCameraTilt && isWallRunning && isWallLeft)
